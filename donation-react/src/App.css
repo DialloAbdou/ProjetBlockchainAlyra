@@ -1,0 +1,124 @@
+
+/* Définition des polices personnalisés */
+@font-face 
+{
+    font-family: 'droid_sansregular';
+    src: url('fonts/DroidSans-webfont.eot');
+    src: url('fonts/DroidSans-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/DroidSans-webfont.woff') format('woff'),
+         url('fonts/DroidSans-webfont.ttf') format('truetype'),
+         url('fonts/DroidSans-webfont.svg#droid_sansregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+/* Elements principaux sur la pages cad body */
+body {
+  background: url('images/greyzz.png');
+  font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+  
+
+}
+h2 {
+
+ font-size: 1.5em;
+ font-family: 'Times New Roman', Times, serif;
+ text-transform: uppercase;
+}
+p {
+  font-family: droid_sansregular, serif;
+  font-weight: normal;
+  font-size: 1.3em;
+  text-align: justify;
+
+}
+
+/* Header */
+.App-header{
+  background-color: rgb(92, 56, 56);
+  display: flex;
+  justify-content:space-around;
+}
+.Account p {
+  color: rgb(255, 255, 255);
+  font-weight: bold;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.5em;
+  margin-top: 50px;
+  font-style: italics;
+
+}
+.voteSelecetion h2,.RenderDon h2{
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.3em;
+  text-align: center;
+
+
+}
+
+/* Le container */
+
+.PostionVote,.faireDon{
+  width: 500px;
+  margin: auto;
+}
+.vote p,.don p{
+  font-size: 1.5em;
+  text-align: justify;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+ .vote button{
+  width: 160px;
+  height: 50px;
+  margin-left: 140px;
+  font-size: 20px;
+  font-weight: bold;
+  background-color: #00ffa6b3;
+  font-style: italic;
+  font-family:'Indie Flower';
+
+
+}
+.btClose button{
+  margin-left: 734px;
+  margin-top: 0px;
+  width: 160px;
+  height: 50px;
+  background-color: #CD5C5C;
+  font-size: 20px;
+  font-family:'Indie Flower';
+
+}
+.btClose h2 {
+  font-size: 1.5em;
+ font-family: 'Times New Roman', Times, serif;
+ text-transform: uppercase;
+ margin-top: 25px;
+ margin-right: 20px;
+ text-align: center;
+
+}
+
+
+/* la partie donation */
+.don button {
+  width: 170px;
+  height: 70px;
+  margin-left: 5px;
+  background-color: rgba(255, 0, 64, 0.856);
+  font-size: 1.2em;
+  font-family :'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  font-weight: bold;
+  color: aliceblue;
+  font-style: italic;
+}
+.don input {
+  height: 50px;
+  width: 180px;
+  padding: 5px;
+  font-size: 26px;
+  font-style: italic;
+  border: 0;
+  border: 1px #7dcfb6 solid;
+
+}
+
