@@ -1,11 +1,17 @@
- pragma solidity ^0.6.8;
+ pragma solidity ^0.6.12;
  pragma experimental ABIEncoderV2;
  import "@openzeppelin/contracts/math/SafeMath.sol";
- import "@openzeppelin/contracts/token/ERC720/ERC720.sol";
-
 contract Donation{
-     using SafeMath for uint256;
-    
+    using SafeMath for uint256;
+   // Enum l'etat d'elevolution d'un propsition
+    enum EtatProposition 
+    {
+          SelectionEncours,
+          Selectionner, 
+          Valide,
+          Refus
+    }
+    //===Structure des données 
     struct Proposition {
         uint256 id;
         string nomProp;
@@ -13,74 +19,68 @@ contract Donation{
         uint256 montant;
         string description;
         EtatProposition etat;
-        uint32 nbVote;
         uint256 donEcour;
+        uint16 nbVote;
         
     }
-    struct PorteurPrjet {
-        string nom;
-        bool estActive;
-    }
+    
      struct Donateur {
          string nom;
          bool estActive;
          bool avote;
          address donateur;
      }
-     // Enum l'etat d'elevolution d'un propsition
-     enum EtatProposition 
-    {
-          SelectionEncours,
-          Selectionner, 
-          Valide,
-          Refus
-    }
-    //event Proposition (uint id,string nomPropo, address porteur,uint256 montant,EtatProposition etat, uint32 nbvote, uint256 donEcore ,uint256 date) ; // evenement sur la Proposition
-    event Don(address donateur, uint256, uint256 date); // evenement sur un don 
-    // Fonctions uniquement utilisables par le porteursProjets
-    modifier estporteur{
-       
-         require(porteursProjets[msg.sender].estActive == true," vous n ' etes pas inscrit");
-         _;
-    }
-    // Fonctions uniquement utilisables par un L'adminstrateur du contract
-    modifier onlyAdmin(){
-        require(Admin == msg.sender,"il faut être adminstrateur");
-        _;
-    }
-    
-    modifier estDonateur {
-        require(donateurs[msg.sender].estActive,"vous n'ête pas donateurs");
-        _;
-    }
-     address public Admin;
-      // Liste des ID des  differentes propostion dynamique des propriétés
-    uint256[] private listProposition;
-    
+    //=======Declaration des Variables==========
+
      // Liste des proteurProjet indexée par son address
-     mapping(address=> PorteurPrjet) public porteursProjets;
+     mapping(address=>bool) public porteursProjets;
      
    // Liste des proposition indexée par une valeur numérique
      mapping(uint256 => Proposition) public propositions;
      
       // Liste des donateurs indexée par son address
      mapping(address=> Donateur) public donateurs;
+
+     address public admin;
+      // Liste des ID des  differentes propostion dynamique des propriétés
+    address public porteurPrjet;
+    uint256[] private listProposition;
+    
      
      uint256[] private listeSelectionner;
      // liste des ID des differentes propositions selectionner par l 'adminstrateur qui seront emis par les donateurs'
-     
+
+    event PropositionAjoutee (uint id,string nomPropo, address porteur,uint256 montant, uint32 nbvote, uint256 donEcore ,uint256 date) ; // evenement sur la Proposition
+    event Don(address donateur, uint256, uint256 date); // evenement sur un don 
+    
+    // Fonctions uniquement utilisables par le porteursProjets
+    modifier estporteur{
+         require(porteursProjets[msg.sender]," vous n'etes pas inscrit");
+         _;
+    }
+    // Fonctions uniquement utilisables par un L'adminstrateur du contract
+    modifier onlyAdmin(){
+        require(admin == msg.sender,"il faut être adminstrateur");
+        _;
+    }
+    
+    modifier estDonateur {
+        require(donateurs[msg.sender].estActive,"vous n'ête pas donateur");
+        _;
+    }
+    
     constructor() public{
-        Admin = msg.sender;
+        admin = msg.sender;
     }
     
     /**
      * Elle permet au porteur de Projet de s'inscrire 
-     * Pour pouvoir ajouter leurs projet pouvoir etre selectionner *
+     * Pour pouvoir ajouter leur projet pour pouvoir etre selectionner *
     */
     
-    function inscritPorteurProjet(string memory _nom)external{
-       require(porteursProjets[msg.sender].estActive == false,"Vous êtes dejat inscrit");
-       porteursProjets[msg.sender] = PorteurPrjet(_nom, true);
+    function inscritPorteurProjet()external{
+      require(porteursProjets[msg.sender] == true,"Vous êtes dejat inscrit");
+       porteursProjets[msg.sender] = true;
     }
     
     /**
@@ -89,48 +89,11 @@ contract Donation{
     */
     function ajouterPropositon(uint256 _id, string memory _nomPro, uint256 _montant, string memory _description)external{
      require(propositions[_id].id != _id, "cette proposition existe dejat");
-     require(porteursProjets[msg.sender].estActive == true," vous n'etes pas inscrit");
+     require(porteursProjets[msg.sender]," vous n'etes pas inscrit");
         propositions[_id] = Proposition(_id, _nomPro, msg.sender,_montant,_description, EtatProposition.SelectionEncours,0,0);
         listProposition.push(_id);
-       emit Proposition ( _id,_nomPro,msg.sender, _montant,EtatProposition.SelectionEncours,0,0,now) ; // evenement sur la Proposition
+       emit PropositionAjoutee( _id,_nomPro,msg.sender, _montant,0,0,now) ; // evenement sur la Proposition
         
-    }
-    /*
-     *  elle permet - a l'adminstrateur de selectionner 
-       le  propositions qui vont etre vote par les porteursProjets
-     *
-    **/
-    function propositionAselectionner(uint256 _id) external 
-    onlyAdmin
-    {
-        require(propositions[_id].id == _id," cette proposition n'existe pas !");
-        //require(listeSelectionner.length< 4, "nombre de selection est atteint");
-        require(propositions[_id].etat == EtatProposition.SelectionEncours,"selection doit être en cours");
-        require(!propositionExist(_id),"elle est dejat selectionner");
-        Proposition storage p = propositions[_id];
-        p.etat = EtatProposition.Selectionner;
-        listeSelectionner.push(_id);
-    }
-    /**
-     *  cette fonction permet de retourner 
-     * une Proposition Selectionner dans
-     * le tableau des propositions Selectionner
-    */
-    function propositionSelectionIndex( uint256 _index) public view returns(Proposition memory) {
-        require(_index < listeSelectionner.length,"index n'existe pas ");
-        uint256 id = listeSelectionner[_index];
-        return propositions[id];
-    }
-    /*
-     *   une function private qui permet de verifier existance d'une Proposition Sectionner*
-    **/
-    function propositionExist(uint256 _id) internal view returns (bool) {
-       for(uint256 i; i< listeSelectionner.length; i++){
-          if(propositionSelectionIndex(i).id == _id){
-              return true;
-          }
-       }
-     
     }
     /*
      * Elle retourne une Proposition ajouter par le porteursProjets*
@@ -159,6 +122,7 @@ contract Donation{
     *
     */
     function inscritDonnateur(string memory _nom) external {
+        require(donateurs[msg.sender].estActive == false,"Vous êtes dejat inscrit");
         donateurs[msg.sender] = Donateur(_nom, true, false, msg.sender);
     }
 
@@ -177,31 +141,30 @@ contract Donation{
             if(propositionSelectionIndex(i).id == _id){
                Proposition storage p = propositions[_id];
                p.nbVote= p.nbVote.add(1);
+              //p.nbVote+=1;
                Undonateur.avote = true; 
             }
         }
 
     }
-    
     /*
-     * elle me renvoie dans le tableau de listeSelectionner  index qui a eu plus de vote *
-     * 
+     *  elle permet - a l'adminstrateur de selectionner 
+       le  propositions qui vont etre vote par les porteursProjets
+     *
     **/
-    function valideIndex() private view returns(uint256 ) {
-     uint256 nvote = 0;
-     uint256 indexValid = 0;
-     for(uint256 i; i< listeSelectionner.length; i++)
-     {
-         if(propositionSelectionIndex(i).nbVote > nvote){
-             nvote = propositionSelectionIndex(i).nbVote;
-             indexValid = i;
-         }
-     }
-
-     return indexValid;
+    function propositionAselectionner(uint256 _id) external 
+    onlyAdmin
+    {
+        require(propositions[_id].id == _id," cette proposition n'existe pas !");
+        //require(listeSelectionner.length< 4, "nombre de selection est atteint");
+        require(propositions[_id].etat == EtatProposition.SelectionEncours,"selection doit être en cours");
+        require(!propositionExist(_id),"elle est dejat selectionner");
+        Proposition storage p = propositions[_id];
+        p.etat = EtatProposition.Selectionner;
+        listeSelectionner.push(_id);
     }
-    
-    /*
+
+     /*
      *  Une fonction pour arreter les votes *
     */
     function closeVote() external onlyAdmin returns (bool) {
@@ -225,7 +188,7 @@ contract Donation{
     /*
      * fair un don sur la proposition gagnante *
     **/
-    function fairDon( uint256 _id) 
+    function faireDon( uint256 _id) 
     external 
     estDonateur
     payable 
@@ -233,11 +196,52 @@ contract Donation{
         Proposition storage p=  propositions[_id];
         require(p.etat == EtatProposition.Valide,"proposition doit etre valide");
         require(msg.value > 0,"le don doit être supérieur à zero");
-        // p.porteurProjet.transfer(msg.value);
-        transfer(p.porteurProjet,msg.value)
+        p.porteurProjet.transfer(msg.value);
          //p.donEcour += msg.value;
         p.donEcour = donEcour.add(msg.value);
         emit Don(msg.sender,msg.value, now);
     }
+
+    /**
+     *  cette fonction permet de retourner 
+     * une Proposition Selectionner dans
+     * le tableau des propositions Selectionner
+    */
+    function propositionSelectionIndex( uint256 _index) public view returns(Proposition memory) {
+        require(_index < listeSelectionner.length,"index n'existe pas ");
+        uint256 id = listeSelectionner[_index];
+        return propositions[id];
+    }
+    /*
+     *   une function private qui permet de verifier existance d'une Proposition Sectionner*
+    **/
+    function propositionExist(uint256 _id) internal view returns (bool) {
+       for(uint256 i; i< listeSelectionner.length; i++){
+          if(propositionSelectionIndex(i).id == _id){
+              return true;
+          }
+       }
+     
+    }
+
+    
+    /*
+     * elle me renvoie dans le tableau de listeSelectionner  index qui a eu plus de vote *
+     * 
+    **/
+    function valideIndex() private view returns(uint256 ) {
+     uint256 nvote = 0;
+     uint256 indexValid = 0;
+     for(uint256 i; i< listeSelectionner.length; i++)
+     {
+         if(propositionSelectionIndex(i).nbVote > nvote){
+             nvote = propositionSelectionIndex(i).nbVote;
+             indexValid = i;
+         }
+     }
+
+     return indexValid;
+    }
+    
     
 } 
